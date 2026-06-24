@@ -60,10 +60,22 @@ export class MealPlanCardEditor extends LitElement {
                 multiple: true,
                 mode: 'dropdown',
                 options: [
-                  { value: OverviewField.SCHEDULES, label: localize('overview.schedules') },
-                  { value: OverviewField.ACTIVE, label: localize('overview.active') },
-                  { value: OverviewField.TODAY, label: localize('overview.today') },
-                  { value: OverviewField.AVG_WEEK, label: localize('overview.avg_week') },
+                  {
+                    value: OverviewField.SCHEDULES,
+                    label: localize('overview.schedules'),
+                  },
+                  {
+                    value: OverviewField.ACTIVE,
+                    label: localize('overview.active'),
+                  },
+                  {
+                    value: OverviewField.TODAY,
+                    label: localize('overview.today'),
+                  },
+                  {
+                    value: OverviewField.AVG_WEEK,
+                    label: localize('overview.avg_week'),
+                  },
                 ],
               },
             },

@@ -124,9 +124,9 @@ export class MealPlanCard extends LitElement {
         ></meal-overview>
         <div class="inline-schedules">
           ${this.mealState.meals.length === 0
-          ? html`<p>${localize('schedule_view.no_meals_scheduled')}</p>`
-          : this.mealState.meals.map(
-            (meal, index) => html`
+            ? html`<p>${localize('schedule_view.no_meals_scheduled')}</p>`
+            : this.mealState.meals.map(
+                (meal, index) => html`
                   <meal-card
                     .meal=${meal}
                     .index=${index}
@@ -134,17 +134,17 @@ export class MealPlanCard extends LitElement {
                     .onMealAction=${this._handleMealAction.bind(this)}
                   ></meal-card>
                 `,
-          )}
+              )}
         </div>
         <div class="card-actions">
           <ha-button
             appearance="plain"
             variant="brand"
             @click=${() => {
-          this._openAddOnLoad = true;
-          this._editMealIndex = undefined;
-          this._dialogOpen = true;
-        }}
+              this._openAddOnLoad = true;
+              this._editMealIndex = undefined;
+              this._dialogOpen = true;
+            }}
           >
             ${localize('common.add_meal')}
           </ha-button>
@@ -189,10 +189,10 @@ export class MealPlanCard extends LitElement {
         .openAddOnLoad=${this._openAddOnLoad}
         .editMealIndex=${this._editMealIndex}
         @schedule-closed=${() => {
-        this._dialogOpen = false;
-        this._openAddOnLoad = false;
-        this._editMealIndex = undefined;
-      }}
+          this._dialogOpen = false;
+          this._openAddOnLoad = false;
+          this._editMealIndex = undefined;
+        }}
       ></schedule-view>
     `;
   }

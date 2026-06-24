@@ -183,12 +183,12 @@ export class ScheduleView extends LitElement {
         <ha-button
           slot="primaryAction"
           @click=${() => {
-        const dialog =
-          this.shadowRoot?.querySelector<MealEditDialog>(
-            'meal-edit-dialog',
-          );
-        dialog?.handleSave();
-      }}
+            const dialog =
+              this.shadowRoot?.querySelector<MealEditDialog>(
+                'meal-edit-dialog',
+              );
+            dialog?.handleSave();
+          }}
         >
           ${localize('common.save')}
         </ha-button>
@@ -237,9 +237,9 @@ export class ScheduleView extends LitElement {
       ></message-banner>
       <div class="schedule-cards">
         ${this.draftMeals.length === 0
-        ? this.renderEmptyState()
-        : this.draftMeals.map(
-          (meal, index) => html`
+          ? this.renderEmptyState()
+          : this.draftMeals.map(
+              (meal, index) => html`
                 <meal-card
                   .meal=${meal}
                   .index=${index}
@@ -248,7 +248,7 @@ export class ScheduleView extends LitElement {
                 >
                 </meal-card>
               `,
-        )}
+            )}
       </div>
       <ha-dialog-footer slot="footer">
         ${this.renderAddButton()}
