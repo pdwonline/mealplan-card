@@ -2,7 +2,7 @@
 import { customElement, property, state } from 'lit/decorators.js';
 import { localize, setLanguage } from './locales/localize';
 import { MealStateController } from './mealStateController';
-import type { HomeAssistant, MealPlanCardConfig } from './types';
+import type { HomeAssistant, MealPlanCardConfig, FeedingTime } from './types';
 import { OverviewField, TransportType } from './types';
 import { getProfileWithTransformer } from './profiles/profiles';
 import './components/overview.js';
@@ -19,20 +19,22 @@ export class MealPlanCard extends LitElement {
   @state() public mealState?: MealStateController;
   @state() private _dialogOpen = false;
   @state() private _openAddOnLoad = false;
+  @state() private _editMealIndex: number | undefined = undefined;
 
   static get styles() {
     return css`
-    :host,
-    ha-card {
-      display: block;
-      height: 100%;
-      overflow: hidden;
-    }
-    .inline-schedules {
-      padding: 0 16px 8px 16px;
-    }
+      :host,
+      ha-card {
+        display: block;
+        height: 100%;
+        overflow: hidden;
+      }
+      .inline-schedules {
+        padding: 0 16px 8px 16px;
+      }
     `;
   }
+
   setConfig(config: MealPlanCardConfig) {
     this.config = config;
 
@@ -88,6 +90,26 @@ export class MealPlanCard extends LitElement {
     `;
   }
 
+  private _handleMealAction(
+    action: string,
+    index: number,
+    meal: FeedingTime,
+  ): void {
+    if (action === 'edit') {
+      this._editMealIndex = index;
+      this._openAddOnLoad = false;
+      this._dialogOpen = true;
+    } else if (action === 'delete') {
+      const updated = this.mealState!.meals.filter((_, i) => i !== index);
+      this.mealState!.saveMeals(updated);
+    } else if (action === 'update') {
+      const updated = this.mealState!.meals.map((m, i) =>
+        i === index ? meal : m,
+      );
+      this.mealState!.saveMeals(updated);
+    }
+  }
+
   private renderContent() {
     if (!this.mealState) {
       return this.renderConfigurationRequired();
@@ -109,17 +131,20 @@ export class MealPlanCard extends LitElement {
                     .meal=${meal}
                     .index=${index}
                     .profile=${this.mealState!.profile}
+                    .onMealAction=${this._handleMealAction.bind(this)}
                   ></meal-card>
                 `,
           )}
+        </div>
         <div class="card-actions">
           <ha-button
             appearance="plain"
             variant="brand"
             @click=${() => {
-                  this._openAddOnLoad = true;
-                  this._dialogOpen = true;
-                }}
+          this._openAddOnLoad = true;
+          this._editMealIndex = undefined;
+          this._dialogOpen = true;
+        }}
           >
             ${localize('common.add_meal')}
           </ha-button>
@@ -162,9 +187,11 @@ export class MealPlanCard extends LitElement {
         .mealState=${this.mealState}
         .hass=${this.hass}
         .openAddOnLoad=${this._openAddOnLoad}
+        .editMealIndex=${this._editMealIndex}
         @schedule-closed=${() => {
         this._dialogOpen = false;
         this._openAddOnLoad = false;
+        this._editMealIndex = undefined;
       }}
       ></schedule-view>
     `;
