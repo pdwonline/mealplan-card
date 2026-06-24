@@ -1,8 +1,3 @@
-/**
- * ScheduleView component for managing meal schedules
- * Self-contained LitElement component with internal state
- */
-
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { localize } from '../locales/localize';
@@ -16,14 +11,11 @@ import type { MealEditDialog } from './edit-dialog';
 import './meal-card';
 import './message-banner';
 
-/**
- * Schedule view component
- * Emits: 'schedule-closed' when dialog closes
- */
 @customElement('schedule-view')
 export class ScheduleView extends LitElement {
   @property({ type: Object }) mealState!: MealStateController;
   @property({ type: Object }) hass!: HomeAssistant;
+  @property({ type: Boolean }) openAddOnLoad = false;
 
   @state() private draftMeals: FeedingTime[] = [];
   @state() private editMeal: EditMealState | null = null;
@@ -34,22 +26,21 @@ export class ScheduleView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    // Initialize draft from current meals (sorted by time)
     this.draftMeals = this.sortMealsByTime([...this.mealState.meals]);
 
     this.mealState.isDataAvailable().then((available) => {
       this.dataAvailable = available;
     });
 
-    // Subscribe to meals changes from MealStateController
     this.unsubscribe = this.mealState.subscribe(() => {
       this.syncMealsWithController();
     });
+
+    if (this.openAddOnLoad) {
+      this.handleOpenAdd();
+    }
   }
 
-  /**
-   * Sort meals by time (hour, then minute)
-   */
   private sortMealsByTime(meals: FeedingTime[]): FeedingTime[] {
     return [...meals].sort(
       (a, b) =>
@@ -88,9 +79,6 @@ export class ScheduleView extends LitElement {
     }
   `;
 
-  /**
-   * Reset draft to match controller's saved meals
-   */
   private syncMealsWithController(): void {
     this.draftMeals = this.sortMealsByTime([...this.mealState.meals]);
   }
@@ -100,15 +88,15 @@ export class ScheduleView extends LitElement {
       this.draftMeals.map((m, i) => (i === index ? meal : m)),
     );
   }
+
   public getMeals(): FeedingTime[] {
     return this.draftMeals;
   }
+
   public getEditMeals(): EditMealState | null {
     return this.editMeal;
   }
-  /**
-   * Unified handler for meal actions from meal-card
-   */
+
   public handleMealAction(
     action: 'update' | 'delete' | 'edit',
     index: number,
@@ -124,9 +112,6 @@ export class ScheduleView extends LitElement {
     }
   }
 
-  /**
-   * Add new meal to draft
-   */
   public addMeal(meal: FeedingTime): void {
     this.draftMeals = this.sortMealsByTime([...this.draftMeals, meal]);
   }
@@ -156,10 +141,8 @@ export class ScheduleView extends LitElement {
     const { meal, index } = e.detail;
 
     if (index !== undefined && index >= 0) {
-      // Update existing meal
       this.updateMeal(index, meal);
     } else {
-      // Add new meal
       this.addMeal(meal);
     }
 
@@ -175,9 +158,6 @@ export class ScheduleView extends LitElement {
     return !areMealsEqual(this.draftMeals, this.mealState.meals);
   }
 
-  /**
-   * Render meal form (for adding or editing)
-   */
   private renderMealForm() {
     if (this.editMeal === null) return '';
 
@@ -203,12 +183,12 @@ export class ScheduleView extends LitElement {
         <ha-button
           slot="primaryAction"
           @click=${() => {
-            const dialog =
-              this.shadowRoot?.querySelector<MealEditDialog>(
-                'meal-edit-dialog',
-              );
-            dialog?.handleSave();
-          }}
+        const dialog =
+          this.shadowRoot?.querySelector<MealEditDialog>(
+            'meal-edit-dialog',
+          );
+        dialog?.handleSave();
+      }}
         >
           ${localize('common.save')}
         </ha-button>
@@ -216,9 +196,6 @@ export class ScheduleView extends LitElement {
     `;
   }
 
-  /**
-   * Render empty state when no meals exist
-   */
   private renderEmptyState() {
     return html`
       <div class="empty-state">
@@ -233,9 +210,6 @@ export class ScheduleView extends LitElement {
     `;
   }
 
-  /**
-   * Render Add Meal button if profile allows it
-   */
   private renderAddButton() {
     if (!hasProfileField(this.mealState.profile, ProfileField.ADD)) return '';
 
@@ -250,9 +224,6 @@ export class ScheduleView extends LitElement {
     `;
   }
 
-  /**
-   * Render card-based view
-   */
   private renderCardView() {
     if (this.editMeal !== null) return '';
     if (!this.mealState.profile) return '';
@@ -266,9 +237,9 @@ export class ScheduleView extends LitElement {
       ></message-banner>
       <div class="schedule-cards">
         ${this.draftMeals.length === 0
-          ? this.renderEmptyState()
-          : this.draftMeals.map(
-              (meal, index) => html`
+        ? this.renderEmptyState()
+        : this.draftMeals.map(
+          (meal, index) => html`
                 <meal-card
                   .meal=${meal}
                   .index=${index}
@@ -277,7 +248,7 @@ export class ScheduleView extends LitElement {
                 >
                 </meal-card>
               `,
-            )}
+        )}
       </div>
       <ha-dialog-footer slot="footer">
         ${this.renderAddButton()}

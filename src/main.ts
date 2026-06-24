@@ -5,8 +5,9 @@ import { MealStateController } from './mealStateController';
 import type { HomeAssistant, MealPlanCardConfig } from './types';
 import { OverviewField, TransportType } from './types';
 import { getProfileWithTransformer } from './profiles/profiles';
-import './components/overview';
-import './components/schedule-view';
+import './components/overview.js';
+import './components/schedule-view.js';
+import './components/meal-card.js';
 import { log } from './logger';
 import { getVersionString } from './version';
 import './config-form.js';
@@ -17,22 +18,24 @@ export class MealPlanCard extends LitElement {
   @property({ type: Object }) config!: MealPlanCardConfig;
   @state() public mealState?: MealStateController;
   @state() private _dialogOpen = false;
+  @state() private _openAddOnLoad = false;
 
   static get styles() {
     return css`
-      :host,
-      ha-card {
-        display: block;
-        height: 100%;
-        overflow: hidden;
-      }
+    :host,
+    ha-card {
+      display: block;
+      height: 100%;
+      overflow: hidden;
+    }
+    .inline-schedules {
+      padding: 0 16px 8px 16px;
+    }
     `;
   }
-
   setConfig(config: MealPlanCardConfig) {
     this.config = config;
 
-    // Initialize controller if we have all prerequisites
     if (this.hass && this.config.manufacturer) {
       const profile = getProfileWithTransformer(this.config.manufacturer);
 
@@ -52,7 +55,6 @@ export class MealPlanCard extends LitElement {
 
     await setLanguage(this.hass?.language);
 
-    // Initialize meal state controller (hass is now available)
     if (this.config.manufacturer) {
       const profile = getProfileWithTransformer(this.config.manufacturer);
 
@@ -91,6 +93,40 @@ export class MealPlanCard extends LitElement {
       return this.renderConfigurationRequired();
     }
 
+    if (this.config.show_schedules) {
+      return html`
+        <meal-overview
+          .meals=${this.mealState.meals}
+          .portions=${this.config?.portions}
+          .overviewFields=${this.config.overview_fields}
+        ></meal-overview>
+        <div class="inline-schedules">
+          ${this.mealState.meals.length === 0
+          ? html`<p>${localize('schedule_view.no_meals_scheduled')}</p>`
+          : this.mealState.meals.map(
+            (meal, index) => html`
+                  <meal-card
+                    .meal=${meal}
+                    .index=${index}
+                    .profile=${this.mealState!.profile}
+                  ></meal-card>
+                `,
+          )}
+        <div class="card-actions">
+          <ha-button
+            appearance="plain"
+            variant="brand"
+            @click=${() => {
+                  this._openAddOnLoad = true;
+                  this._dialogOpen = true;
+                }}
+          >
+            ${localize('common.add_meal')}
+          </ha-button>
+        </div>
+      `;
+    }
+
     return html`
       <meal-overview
         .meals=${this.mealState.meals}
@@ -125,16 +161,15 @@ export class MealPlanCard extends LitElement {
       <schedule-view
         .mealState=${this.mealState}
         .hass=${this.hass}
+        .openAddOnLoad=${this._openAddOnLoad}
         @schedule-closed=${() => {
-          this._dialogOpen = false;
-        }}
+        this._dialogOpen = false;
+        this._openAddOnLoad = false;
+      }}
       ></schedule-view>
     `;
   }
 
-  //static getConfigForm(): ReturnType<typeof generateConfigFormSchema> {
-  //  return generateConfigFormSchema();
-  ///}
   static getConfigElement() {
     return document.createElement('mealplan-card-editor');
   }
@@ -150,6 +185,7 @@ export class MealPlanCard extends LitElement {
         OverviewField.AVG_WEEK,
       ],
       transport_type: TransportType.SENSOR,
+      show_schedules: false,
     } as MealPlanCardConfig;
   }
 

@@ -3,9 +3,10 @@ import sv from './sv.json';
 import ru from './ru.json';
 import es from './es.json';
 import cs from './cs.json';
+import nl from './nl.json';
 
 type Translation = Record<string, unknown>;
-const translations = { en, sv, ru, es, cs } satisfies Record<
+const translations = { en, sv, ru, es, cs, nl } satisfies Record<
   string,
   Translation
 >;

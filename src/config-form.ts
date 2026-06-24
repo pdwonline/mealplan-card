@@ -22,17 +22,12 @@ export class MealPlanCardEditor extends LitElement {
   private _getAvailableServices() {
     const services: Array<{ value: string; label: string }> = [];
     if (!this.hass?.services) return services;
-
     for (const [domain, domainServices] of Object.entries(this.hass.services)) {
       for (const service of Object.keys(domainServices)) {
         const serviceId = `${domain}.${service}`;
-        services.push({
-          value: serviceId,
-          label: serviceId,
-        });
+        services.push({ value: serviceId, label: serviceId });
       }
     }
-
     return services.sort((a, b) => a.label.localeCompare(b.label));
   }
 
@@ -65,25 +60,17 @@ export class MealPlanCardEditor extends LitElement {
                 multiple: true,
                 mode: 'dropdown',
                 options: [
-                  {
-                    value: OverviewField.SCHEDULES,
-                    label: localize('overview.schedules'),
-                  },
-                  {
-                    value: OverviewField.ACTIVE,
-                    label: localize('overview.active'),
-                  },
-                  {
-                    value: OverviewField.TODAY,
-                    label: localize('overview.today'),
-                  },
-                  {
-                    value: OverviewField.AVG_WEEK,
-                    label: localize('overview.avg_week'),
-                  },
+                  { value: OverviewField.SCHEDULES, label: localize('overview.schedules') },
+                  { value: OverviewField.ACTIVE, label: localize('overview.active') },
+                  { value: OverviewField.TODAY, label: localize('overview.today') },
+                  { value: OverviewField.AVG_WEEK, label: localize('overview.avg_week') },
                 ],
               },
             },
+          },
+          {
+            name: 'show_schedules',
+            selector: { boolean: {} },
           },
         ],
       },
@@ -139,6 +126,7 @@ export class MealPlanCardEditor extends LitElement {
         ],
       });
     }
+
     if (this._config.transport_type === TransportType.MQTT) {
       schema.push({
         type: 'grid',
@@ -159,6 +147,7 @@ export class MealPlanCardEditor extends LitElement {
         ],
       });
     }
+
     if (this._config.transport_type === TransportType.TUYA_SERVICE) {
       schema.push({
         type: 'grid',
@@ -166,9 +155,7 @@ export class MealPlanCardEditor extends LitElement {
           {
             name: 'device_id',
             required: true,
-            selector: {
-              device: {},
-            },
+            selector: { device: {} },
           },
           {
             name: 'read_action',
@@ -193,19 +180,16 @@ export class MealPlanCardEditor extends LitElement {
         ],
       });
     }
+
     return schema;
   }
-  /*
-   * Checks if all required fields in the current config are filled.
-   */
+
   private _allRequiredFieldsFilled(): boolean {
     if (!this._config) return false;
     const schema = this._computeSchema();
     return this._checkRequiredFields(schema);
   }
-  /**
-   *  Recursively checks required fields in the schema.
-   */
+
   private _checkRequiredFields(schema: Record<string, unknown>[]): boolean {
     for (const field of schema) {
       if (field.schema && Array.isArray(field.schema)) {
@@ -222,6 +206,7 @@ export class MealPlanCardEditor extends LitElement {
     }
     return true;
   }
+
   private _valueChanged(ev: CustomEvent) {
     this._config = ev.detail.value;
     if (this._allRequiredFieldsFilled()) {
@@ -237,7 +222,6 @@ export class MealPlanCardEditor extends LitElement {
 
   render() {
     const isValid = this._allRequiredFieldsFilled();
-
     return html`
       ${!isValid
         ? html`<ha-alert alert-type="warning">
@@ -277,12 +261,15 @@ export class MealPlanCardEditor extends LitElement {
         return localize('config.read_action_label');
       case 'device_id':
         return localize('config.device_id_label');
+      case 'show_schedules':
+        return localize('config.show_schedules_label');
       case 'incomplete_configuration':
         return localize('config.incomplete_configuration');
       default:
         return undefined;
     }
   };
+
   private computeHelper = (schema: { name: string }) => {
     switch (schema.name) {
       case 'sensor':
@@ -297,6 +284,8 @@ export class MealPlanCardEditor extends LitElement {
         return localize('config.overview_fields_helper');
       case 'transport_type':
         return localize('config.transport_helper');
+      case 'show_schedules':
+        return localize('config.show_schedules_helper');
       default:
         return undefined;
     }
