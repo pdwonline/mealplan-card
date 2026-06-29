@@ -199,6 +199,11 @@ export class MealPlanCard extends LitElement {
           this._openAddOnLoad = false;
           this._editMealIndex = undefined;
         }}
+        @closed=${() => {
+          this._dialogOpen = false;
+          this._openAddOnLoad = false;
+          this._editMealIndex = undefined;
+        }}
       ></schedule-view>
     `;
   }

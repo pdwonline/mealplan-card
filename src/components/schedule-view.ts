@@ -16,6 +16,7 @@ export class ScheduleView extends LitElement {
   @property({ type: Object }) mealState!: MealStateController;
   @property({ type: Object }) hass!: HomeAssistant;
   @property({ type: Boolean }) openAddOnLoad = false;
+  @property({ type: Number }) editMealIndex?: number;
 
   @state() private draftMeals: FeedingTime[] = [];
   @state() private editMeal: EditMealState | null = null;
@@ -36,7 +37,6 @@ export class ScheduleView extends LitElement {
       this.syncMealsWithController();
     });
 
-    // Use setTimeout to ensure properties are set before checking
     setTimeout(() => {
       if (this.openAddOnLoad) {
         this.handleOpenAdd();
@@ -85,6 +85,32 @@ export class ScheduleView extends LitElement {
     }
     .empty-state-subtitle {
       font-size: 0.9em;
+    }
+    .edit-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32px 0px 0px 0px;
+      width: 100%;
+      box-sizing: border-box;
+      border-top: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+      margin-top: 8px;
+    }
+    .delete-link {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--error-color, #b00020);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 18px;
+      font-family: inherit;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .delete-link:hover {
+      background-color: rgba(var(--rgb-error-color, 176, 0, 32), 0.1);
     }
   `;
 
@@ -146,16 +172,32 @@ export class ScheduleView extends LitElement {
     this.dispatchEvent(new ScheduleClosedEvent());
   }
 
-  public handleEditSave(e: CustomEvent<EditMealState>) {
+  public async handleEditSave(e: CustomEvent<EditMealState>) {
     const { meal, index } = e.detail;
 
+    let updatedMeals: FeedingTime[];
+
     if (index !== undefined && index >= 0) {
-      this.updateMeal(index, meal);
+      updatedMeals = this.sortMealsByTime(
+        this.draftMeals.map((m, i) => (i === index ? meal : m)),
+      );
     } else {
-      this.addMeal(meal);
+      updatedMeals = this.sortMealsByTime([...this.draftMeals, meal]);
     }
 
-    this.closeEditForm();
+    this.draftMeals = updatedMeals;
+    await this.mealState.saveMeals(updatedMeals);
+    this.dispatchEvent(new ScheduleClosedEvent());
+  }
+
+  private async handleDeleteFromEdit() {
+    if (this.editMeal?.index === undefined) return;
+    const updatedMeals = this.draftMeals.filter(
+      (_, i) => i !== this.editMeal!.index,
+    );
+    this.draftMeals = updatedMeals;
+    await this.mealState.saveMeals(updatedMeals);
+    this.dispatchEvent(new ScheduleClosedEvent());
   }
 
   private closeEditForm() {
@@ -170,6 +212,9 @@ export class ScheduleView extends LitElement {
   private renderMealForm() {
     if (this.editMeal === null) return '';
 
+    const isExisting =
+      this.editMeal.index !== undefined && this.editMeal.index >= 0;
+
     return html`
       <div>
         <meal-edit-dialog
@@ -180,28 +225,28 @@ export class ScheduleView extends LitElement {
           @save=${this.handleEditSave}
           @cancel=${this.closeEditForm}
         ></meal-edit-dialog>
+        <div class="edit-footer">
+          ${isExisting &&
+          hasProfileField(this.mealState.profile, ProfileField.DELETE)
+            ? html`
+                <button class="delete-link" @click=${this.handleDeleteFromEdit}>
+                  ${localize('common.delete')}
+                </button>
+              `
+            : html`<span></span>`}
+          <ha-button
+            @click=${() => {
+              const dialog =
+                this.shadowRoot?.querySelector<MealEditDialog>(
+                  'meal-edit-dialog',
+                );
+              dialog?.handleSave();
+            }}
+          >
+            ${localize('common.save')}
+          </ha-button>
+        </div>
       </div>
-      <ha-dialog-footer slot="footer">
-        <ha-button
-          slot="secondaryAction"
-          appearance="plain"
-          @click=${this.closeEditForm}
-        >
-          ${localize('common.back')}
-        </ha-button>
-        <ha-button
-          slot="primaryAction"
-          @click=${() => {
-            const dialog =
-              this.shadowRoot?.querySelector<MealEditDialog>(
-                'meal-edit-dialog',
-              );
-            dialog?.handleSave();
-          }}
-        >
-          ${localize('common.save')}
-        </ha-button>
-      </ha-dialog-footer>
     `;
   }
 

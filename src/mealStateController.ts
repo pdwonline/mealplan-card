@@ -2,7 +2,6 @@
  * Reactive controller for managing meal plan state
  * Implements Lit's ReactiveController pattern - calls host.requestUpdate() when state changes
  */
-
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import { FeedingTime, DeviceProfile } from './types';
 import type { HasGetter, MealPlanCardConfig, StorageAdapter } from './types';
@@ -13,6 +12,7 @@ import { areMealsEqual } from './utils';
 export class MealStateController implements ReactiveController {
   private _meals: FeedingTime[] = [];
   private subscribers = new Set<() => void>();
+  private _saving = false;
 
   hass: HasGetter;
   profile: DeviceProfile;
@@ -41,7 +41,6 @@ export class MealStateController implements ReactiveController {
     this.config = config;
     this.adapter = createStorageAdapter(hass, config, profile);
 
-    // Load initial data after construction
     if (this.hass()) {
       this.updateFromHass().catch((error) => {
         log.error('Failed to load initial data:', error);
@@ -53,37 +52,32 @@ export class MealStateController implements ReactiveController {
     }
   }
 
-  hostConnected(): void {}
+  hostConnected(): void { }
 
   hostDisconnected(): void {
     this.subscribers.clear();
   }
 
-  /**
-   * Subscribe to meals changes
-   */
   subscribe(callback: () => void): () => void {
     this.subscribers.add(callback);
     return () => this.subscribers.delete(callback);
   }
 
-  /**
-   * Notify all subscribers of changes
-   */
   private notifySubscribers(): void {
     this.host.requestUpdate();
     this.subscribers.forEach((callback) => callback());
   }
 
-  /**
-   * Update from Home Assistant - read and decode from storage adapter
-   */
   async updateFromHass(allowUpdate: boolean = true): Promise<void> {
+    if (this._saving) {
+      log.debug('Skipping updateFromHass - save in progress');
+      return;
+    }
+
     const decodedMeals = await this.adapter.read();
 
     if (allowUpdate) {
       const newMeals = decodedMeals ? [...decodedMeals] : [];
-      // Only update if meals have actually changed
       if (!areMealsEqual(decodedMeals, this.meals)) {
         this.meals = newMeals;
       } else {
@@ -92,24 +86,23 @@ export class MealStateController implements ReactiveController {
     }
   }
 
-  /**
-   * Save meals to storage via adapter, then update local state
-   */
   async saveMeals(meals: FeedingTime[]): Promise<void> {
+    this._saving = true;
     await this.adapter.write(meals);
     this.meals = [...meals];
+    setTimeout(() => {
+      this._saving = false;
+    }, 5000);
   }
 
   public async isDataAvailable(): Promise<boolean> {
     try {
       const available = await this.adapter.isDataAvailable();
-
       if (!available) {
         log.warn(
           '[MealStateController] Data not available - adapter returned empty value',
         );
       }
-
       return available;
     } catch (error) {
       log.warn(
