@@ -36,11 +36,20 @@ export class ScheduleView extends LitElement {
       this.syncMealsWithController();
     });
 
-    if (this.openAddOnLoad) {
-      this.handleOpenAdd();
-    }
+    // Use setTimeout to ensure properties are set before checking
+    setTimeout(() => {
+      if (this.openAddOnLoad) {
+        this.handleOpenAdd();
+      } else if (this.editMealIndex !== undefined) {
+        const meal = this.mealState.meals[this.editMealIndex];
+        if (meal) {
+          this.heading = localize('schedule_view.edit_feeding_time');
+          this.editMeal = { meal, index: this.editMealIndex };
+        }
+      }
+    }, 0);
   }
-
+  
   private sortMealsByTime(meals: FeedingTime[]): FeedingTime[] {
     return [...meals].sort(
       (a, b) =>
