@@ -37,3 +37,5 @@ Thumbs.db
 .github/instructions/*
 target
 .npmrc
+
+deploy.sh

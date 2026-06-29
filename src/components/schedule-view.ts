@@ -49,7 +49,7 @@ export class ScheduleView extends LitElement {
       }
     }, 0);
   }
-  
+
   private sortMealsByTime(meals: FeedingTime[]): FeedingTime[] {
     return [...meals].sort(
       (a, b) =>

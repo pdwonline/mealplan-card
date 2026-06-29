@@ -32,6 +32,9 @@ export class MealPlanCard extends LitElement {
       .inline-schedules {
         padding: 0 16px 8px 16px;
       }
+      .inline-schedules.no-overview {
+        padding-top: 8px;
+      }
     `;
   }
 
@@ -116,13 +119,16 @@ export class MealPlanCard extends LitElement {
     }
 
     if (this.config.show_schedules) {
+      const hasOverview =
+        this.config.overview_fields && this.config.overview_fields.length > 0;
+
       return html`
         <meal-overview
           .meals=${this.mealState.meals}
           .portions=${this.config?.portions}
           .overviewFields=${this.config.overview_fields}
         ></meal-overview>
-        <div class="inline-schedules">
+        <div class="inline-schedules ${!hasOverview ? 'no-overview' : ''}">
           ${this.mealState.meals.length === 0
             ? html`<p>${localize('schedule_view.no_meals_scheduled')}</p>`
             : this.mealState.meals.map(

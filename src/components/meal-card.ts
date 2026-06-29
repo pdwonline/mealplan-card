@@ -16,11 +16,15 @@ export class MealCard extends LitElement {
 
   static styles = css`
     .meal-card {
-      background: var(--card-background-color, #fff);
-      border-radius: 6px;
+      background: var(
+        --meal-card-background,
+        var(--card-background-color, #fff)
+      );
+      border-radius: var(--meal-card-border-radius, 6px);
       margin-bottom: 6px;
-      border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      border: 1px solid
+        var(--meal-card-border-color, var(--divider-color, rgba(0, 0, 0, 0.12)));
+      box-shadow: var(--meal-card-box-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
     }
     .meal-card-header {
       display: flex;
@@ -112,8 +116,12 @@ export class MealCard extends LitElement {
     }
     .meal-card-details {
       padding: 0 10px 8px 10px;
-      border-top: 1px solid var(--divider-color, #e0e0e0);
-      background: var(--secondary-background-color, #f5f5f5);
+      border-top: 1px solid
+        var(--meal-card-border-color, var(--divider-color, #e0e0e0));
+      background: var(
+        --meal-card-details-background,
+        var(--secondary-background-color, #f5f5f5)
+      );
     }
     .meal-card-row {
       display: flex;
@@ -143,7 +151,6 @@ export class MealCard extends LitElement {
       --mdc-theme-primary: var(--error-color, #db4437);
     }
   `;
-
   private toggleExpand() {
     const wasExpanded = this.expanded;
     this.expanded = !this.expanded;
